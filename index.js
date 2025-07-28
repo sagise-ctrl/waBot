@@ -47,7 +47,7 @@ async function startBot() {
 
     if (qrCode) {
       console.log("📸 Silakan scan QR Code berikut ini:");
-      qr.generate(qrCode, { small: true }); // Cetak QR dalam bentuk balok
+      qr.generate(qrCode); // Cetak QR dalam bentuk balok
     }
 
     if (connection === "close") {
