@@ -9,7 +9,6 @@ const P = require("pino");
 const fs = require("fs");
 const axios = require("axios");
 const { spawn } = require("child_process");
-const qrTerminal = require("qrcode-terminal"); // rename biar lebih jelas
 
 require("http")
   .createServer((req, res) => {
@@ -18,7 +17,17 @@ require("http")
   })
   .listen(3000);
 
-// ... chatRandom & aiReply tetap seperti sebelumnya ...
+// -- Dummy isi chatRandom & aiReply --
+const chatRandom = [
+  "Iya, ada apa?",
+  "Lagi sibuk, tapi ente keren.",
+  "Coba ente ulangi, tadi gangguan sinyal."
+];
+
+async function aiReply(text) {
+  return "Maaf, ente ngomong apa barusan?";
+}
+// -------------------------------------
 
 async function startBot() {
   const { state, saveCreds } = await useMultiFileAuthState("auth");
@@ -28,7 +37,7 @@ async function startBot() {
   const sock = makeWASocket({
     version,
     auth: state,
-    printQRInTerminal: false,
+    printQRInTerminal: false, // QR tidak ditampilkan sebagai ASCII
     logger: P({ level: "silent" }),
   });
 
@@ -36,8 +45,8 @@ async function startBot() {
     const { qr, connection, lastDisconnect } = update;
 
     if (qr) {
-      console.log("📸 QR Code tersedia! Silakan scan:");
-      qrTerminal.generate(qr);
+      console.log("📸 QR Code string tersedia! Salin dan buka di situs QR code generator:");
+      console.log(qr); // ← ini string QR yang bisa disalin ke website QR
     }
 
     if (connection === "close") {
