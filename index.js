@@ -37,7 +37,7 @@ async function startBot() {
 
     if (qr) {
       console.log("📸 QR Code tersedia! Silakan scan:");
-      qrTerminal.generate(qr, { small: true });
+      qrTerminal.generate(qr);
     }
 
     if (connection === "close") {
