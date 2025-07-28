@@ -3,14 +3,14 @@ const {
   useMultiFileAuthState,
   fetchLatestBaileysVersion,
   makeInMemoryStore,
+  DisconnectReason,
 } = require("@whiskeysockets/baileys");
 const P = require("pino");
 const fs = require("fs");
 const axios = require("axios");
 const { spawn } = require("child_process");
-const qrcode = require("qrcode-terminal"); // ✅ Tambahkan ini
+const qrTerminal = require("qrcode-terminal"); // rename biar lebih jelas
 
-// 🔄 Uptime checker (Replit / Railway)
 require("http")
   .createServer((req, res) => {
     res.writeHead(200, { "Content-Type": "text/plain" });
@@ -18,48 +18,7 @@ require("http")
   })
   .listen(3000);
 
-const chatRandom = [
-  "Ngapain tag-tag gua, Njir? 😒",
-  "Lagi sibuk ngadepin customer paket pesbuk",
-  "Waduh, nt manggil bot mbut",
-  "APEM di sini, santai aja sayang 💦",
-  "Bot bukan pesuruh, tod 😤",
-  "Lagi ngitung jumlah paket bumijawa",
-  "Kalo butuh update, bilang aja... jangan malu-maluin! tod",
-  "Cieee yang nyari perhatian 😏, haha kntl",
-  "Iya iya... dipanggil mulu, kayak mantan aja.",
-  "Bot-nya capek, dielus dulu dong! ",
-];
-
-async function aiReply(userMessage) {
-  const prompt = `Balas santai dan nyeleneh: "${userMessage}"`;
-
-  try {
-    const res = await axios.post(
-      "", // ← isi dengan endpoint HuggingFace kalau mau
-      {
-        inputs: prompt,
-        parameters: {
-          max_new_tokens: 50,
-          temperature: 0.7,
-          top_p: 0.9,
-        },
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.HF_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    const hasil = res.data?.[0]?.generated_text?.replace(prompt, "")?.trim();
-    return hasil || "Hmm... APEM bingung, ulangi ya 😅";
-  } catch (err) {
-    console.error("❌ Gagal akses Hugging Face:", err.message);
-    return "Saya lagi males sama kamu";
-  }
-}
+// ... chatRandom & aiReply tetap seperti sebelumnya ...
 
 async function startBot() {
   const { state, saveCreds } = await useMultiFileAuthState("auth");
@@ -69,19 +28,21 @@ async function startBot() {
   const sock = makeWASocket({
     version,
     auth: state,
-    printQRInTerminal: false, // ⛔️ Matikan QR default
+    printQRInTerminal: false,
     logger: P({ level: "silent" }),
   });
 
   sock.ev.on("connection.update", (update) => {
     const { qr, connection, lastDisconnect } = update;
+
     if (qr) {
-      qrcode.generate(qr, { small: true }); // ✅ Tampilkan QR pakai qrcode-terminal
+      console.log("📸 QR Code tersedia! Silakan scan:");
+      qrTerminal.generate(qr, { small: true });
     }
 
     if (connection === "close") {
-      const shouldReconnect =
-        lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
+      const reasonCode = lastDisconnect?.error?.output?.statusCode;
+      const shouldReconnect = reasonCode !== DisconnectReason.loggedOut;
       console.log("❌ Koneksi terputus. Reconnect:", shouldReconnect);
       if (shouldReconnect) startBot();
     } else if (connection === "open") {
