@@ -1,9 +1,14 @@
 import gspread
 from google.oauth2.service_account import Credentials
+import os
+import json
 
 def getPaketKurir(nama_dicari=""):
     scope = ["https://www.googleapis.com/auth/spreadsheets"]
-    credentials = Credentials.from_service_account_file("credentials.json", scopes=scope)
+    creds_json = os.getenv("GOOGLE_CREDS_JSON")
+    creds_dict = json.loads(creds_json)
+    credentials = Credentials.from_service_account_info(creds_dict, scopes=scope)
+
     gc = gspread.authorize(credentials)
     worksheet = gc.open_by_key("1Cp8LvSNgVZtiU7GybnFr02RfYyuAfOziHhVm7yHxqL4").worksheet("Monitoring")
 
@@ -33,7 +38,6 @@ def getPaketKurir(nama_dicari=""):
         return hasil_akhir.strip()
 
     else:
-        # Kalau tidak ada nama dicari, tampilkan semua
         semua_data = ""
         for i, nama in enumerate(kurir_col):
             baris = i + 10
