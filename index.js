@@ -8,8 +8,9 @@ const P = require("pino");
 const fs = require("fs");
 const axios = require("axios");
 const { spawn } = require("child_process");
+const qrcode = require("qrcode-terminal"); // ✅ Tambahkan ini
 
-// 🔄 Uptime checker (Replit / UptimeRobot)
+// 🔄 Uptime checker (Replit / Railway)
 require("http")
   .createServer((req, res) => {
     res.writeHead(200, { "Content-Type": "text/plain" });
@@ -17,7 +18,6 @@ require("http")
   })
   .listen(3000);
 
-// 🎲 Balasan acak lucu
 const chatRandom = [
   "Ngapain tag-tag gua, Njir? 😒",
   "Lagi sibuk ngadepin customer paket pesbuk",
@@ -31,13 +31,12 @@ const chatRandom = [
   "Bot-nya capek, dielus dulu dong! ",
 ];
 
-// ✅ Revisi khusus bagian AI saja
 async function aiReply(userMessage) {
   const prompt = `Balas santai dan nyeleneh: "${userMessage}"`;
 
   try {
     const res = await axios.post(
-      "",
+      "", // ← isi dengan endpoint HuggingFace kalau mau
       {
         inputs: prompt,
         parameters: {
@@ -62,7 +61,6 @@ async function aiReply(userMessage) {
   }
 }
 
-// 🚀 Start WA bot
 async function startBot() {
   const { state, saveCreds } = await useMultiFileAuthState("auth");
   const { version } = await fetchLatestBaileysVersion();
@@ -71,8 +69,24 @@ async function startBot() {
   const sock = makeWASocket({
     version,
     auth: state,
-    printQRInTerminal: true,
+    printQRInTerminal: false, // ⛔️ Matikan QR default
     logger: P({ level: "silent" }),
+  });
+
+  sock.ev.on("connection.update", (update) => {
+    const { qr, connection, lastDisconnect } = update;
+    if (qr) {
+      qrcode.generate(qr, { small: true }); // ✅ Tampilkan QR pakai qrcode-terminal
+    }
+
+    if (connection === "close") {
+      const shouldReconnect =
+        lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
+      console.log("❌ Koneksi terputus. Reconnect:", shouldReconnect);
+      if (shouldReconnect) startBot();
+    } else if (connection === "open") {
+      console.log("✅ Bot WA APEM siap digunakan!");
+    }
   });
 
   store.bind(sock.ev);
@@ -142,9 +156,7 @@ async function startBot() {
           );
         });
       } else {
-        // 🔄 Balas pakai AI atau random (70% random)
         const pakaiRandom = Math.random() < 0.7;
-
         const balasan = pakaiRandom
           ? chatRandom[Math.floor(Math.random() * chatRandom.length)]
           : await aiReply(pesan);
@@ -160,8 +172,6 @@ async function startBot() {
       }
     }
   });
-
-  console.log("✅ Bot aktif dan menunggu pesan...");
 }
 
 startBot();
